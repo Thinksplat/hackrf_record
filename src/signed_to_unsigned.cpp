@@ -21,8 +21,9 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
         }
 
         char *buf = buffer.data();
+        auto size = buffer.size();
         // convert each byte to unsigned
-        for (unsigned int i = 0; i < buffer.size(); i++)
+        for (unsigned int i = 0; i < size; i++)
         {
             buf[i] ^= 0x80;
         }

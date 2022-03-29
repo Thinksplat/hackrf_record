@@ -19,7 +19,7 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
 
         char *buf = buffer.data();
         // convert each byte to unsigned
-        for (int i = 0; i < buffer.size(); i++)
+        for (unsigned int i = 0; i < buffer.size(); i++)
         {
             buf[i] ^= 0x80;
         }
@@ -27,7 +27,6 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
         fwrite(buf, 1, buffer.size(), fp);
 
         size += buffer.size();
-        buffer.Free();
         if (size > max_size)
         {
             return false;
@@ -76,6 +75,8 @@ void WorkerThread(BufferQueue &queue)
 
 int main(int argc, char *argv[])
 {
+    const int readsize = 4096;
+
     BufferQueue queue;
     // start workthread in a new thread
     std::thread workthread(WorkerThread, std::ref(queue));
@@ -83,8 +84,8 @@ int main(int argc, char *argv[])
     // Read 4k from stdin
     while (true)
     {
-        BufferSize buf(4086);
-        int n = fread(buf.data(), 1, 4096, stdin);
+        std::vector<char> buf(readsize);
+        int n = fread(buf.data(), 1, readsize, stdin);
         if (n <= 0)
         {
             buf.resize(0);

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "queue.h"
+#include "lib/queue.h"
 
 void WriteWaveFileHeader(FILE *fp, int sample_rate, int num_samples, int num_channels, int bitdepth)
 {

@@ -1,6 +1,8 @@
 #ifndef D973859B_F679_4191_BD8A_E950B49D2843
 #define D973859B_F679_4191_BD8A_E950B49D2843
 
+
+
 class ThreadsafeQueue<T>
 {
 public:

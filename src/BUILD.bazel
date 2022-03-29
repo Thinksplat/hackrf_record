@@ -1,0 +1,7 @@
+cc_binary(
+    name = "signed_to_unsigned",
+    srcs = glob(["*.cpp"]),
+    deps = [
+        "//lib:lib"
+    ]
+)

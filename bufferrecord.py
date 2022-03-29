@@ -101,7 +101,7 @@ while True:
         start = now
         maxdepth = depth
         # print to stderr
-        #print("Queue depth: %d" % depth, file=sys.stderr)
+        print("Queue depth: %d" % depth, file=sys.stderr)
 
 # Block until all tasks are done.
 q.join()

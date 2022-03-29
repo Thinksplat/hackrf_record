@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "queue.h"
 
 void WriteWaveFileHeader(FILE *fp, int sample_rate, int num_samples, int num_channels, int bitdepth)
 {
@@ -26,6 +27,7 @@ void WriteWaveFileHeader(FILE *fp, int sample_rate, int num_samples, int num_cha
     fwrite("data", 1, 4, fp);
     fwrite(&num_samples, 4, 1, fp);
 }
+
 
 
 int main(int argc, char *argv[])

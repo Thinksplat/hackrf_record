@@ -11,7 +11,10 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
     int size = 0;
     while (true)
     {
-        auto buffer = queue.pop();
+        // Make sure this gets freed
+        std::unique_ptr<std::vector<char>> bufferobj(queue.pop());
+
+        auto &buffer = *bufferobj;
         if (buffer.size() == 0)
         {
             return true;
@@ -84,16 +87,17 @@ int main(int argc, char *argv[])
     // Read 4k from stdin
     while (true)
     {
-        std::vector<char> buf(readsize);
+        std::vector<char> *bufobj = new std::vector<char>(readsize);
+        std::vector<char> &buf = *bufobj;
         int n = fread(buf.data(), 1, readsize, stdin);
         if (n <= 0)
         {
             buf.resize(0);
-            queue.push(buf);
+            queue.push(bufobj);
             break;
         }
         buf.resize(n);
-        queue.push(buf);
+        queue.push(bufobj);
     }
     std::cout << "main thread stopping\n";
     workthread.join();

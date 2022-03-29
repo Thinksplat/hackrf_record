@@ -14,7 +14,7 @@ public:
     ThreadsafeQueue() {}
     ~ThreadsafeQueue() {}
 
-    void push(T value) {
+    void push(const T &value) {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_queue.push(value);
         lock.unlock();
@@ -36,6 +36,39 @@ public:
         std::condition_variable m_condition;
 };
 
-typedef ThreadsafeQueue<std::vector<char>> BufferQueue;
+class BufferSize {
+    public:
+    BufferSize(int s) {
+        bufsize = s;
+        
+        buffer = new char[s];
+    }
+    // copy constructor
+    BufferSize(const BufferSize &other) {
+        bufsize = other.bufsize;
+        buffer = other.buffer;
+    }
+    void Free() {
+        delete[] buffer;
+    }
+    void resize(int s) {
+        bufsize = s;
+    }
+    int size() const 
+    {
+        return this->bufsize;
+    }
+    char *data() const
+    {
+        return buffer;
+    }
+    protected:
+
+    char *buffer;
+    int bufsize;
+};
+
+typedef ThreadsafeQueue<BufferSize>
+    BufferQueue;
 
 #endif /* D973859B_F679_4191_BD8A_E950B49D2843 */

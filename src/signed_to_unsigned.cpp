@@ -17,9 +17,9 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
             return true;
         }
 
-        char *buf = &buffer[0];
+        char *buf = buffer.data();
         // convert each byte to unsigned
-        for (unsigned int i = 0; i < buffer.size(); i++)
+        for (int i = 0; i < buffer.size(); i++)
         {
             buf[i] ^= 0x80;
         }
@@ -27,7 +27,8 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
         fwrite(buf, 1, buffer.size(), fp);
 
         size += buffer.size();
-        if(size > max_size)
+        buffer.Free();
+        if (size > max_size)
         {
             return false;
         }
@@ -82,8 +83,8 @@ int main(int argc, char *argv[])
     // Read 4k from stdin
     while (true)
     {
-        std::vector<char> buf(4086);
-        int n = fread(&buf[0], 1, 4096, stdin);
+        BufferSize buf(4086);
+        int n = fread(buf.data(), 1, 4096, stdin);
         if (n <= 0)
         {
             buf.resize(0);

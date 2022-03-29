@@ -4,14 +4,15 @@
 // include mutex and queue files
 #include <mutex>
 #include <queue>
+#include <vector>
 #include <condition_variable>
 
 template <typename T>
 class ThreadsafeQueue
 {
 public:
-    ThreadsafeQueue();
-    ~ThreadsafeQueue();
+    ThreadsafeQueue() {}
+    ~ThreadsafeQueue() {}
 
     void push(T value) {
         std::unique_lock<std::mutex> lock(m_mutex);
@@ -35,6 +36,6 @@ public:
         std::condition_variable m_condition;
 };
 
-typedef ThreadsafeQueue<const char[]> BufferQueue;
+typedef ThreadsafeQueue<std::vector<char>> BufferQueue;
 
 #endif /* D973859B_F679_4191_BD8A_E950B49D2843 */

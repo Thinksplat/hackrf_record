@@ -1,57 +1,100 @@
 #include <stdio.h>
+#include <iostream>
+#include <thread>
+#include <string>
 #include "lib/queue.h"
+#include "lib/waveheader.h"
 
-void WriteWaveFileHeader(FILE *fp, int sample_rate, int num_samples, int num_channels, int bitdepth)
+bool ProcessQueue(FILE *fp, BufferQueue &queue)
 {
-    // RIFF header
-    fwrite("RIFF", 1, 4, fp);
-    int file_size = 36 + num_samples * num_channels * (bitdepth / 8);
-    fwrite(&file_size, 4, 1, fp);
-    fwrite("WAVE", 1, 4, fp);
-
-    // fmt 
-    fwrite("fmt ", 1, 4, fp);
-    int subchunk1_size = 16;
-    fwrite(&subchunk1_size, 4, 1, fp);
-    short audio_format = 1;
-    fwrite(&audio_format, 2, 1, fp);
-    fwrite(&num_channels, 2, 1, fp);
-    fwrite(&sample_rate, 4, 1, fp);
-    int byte_rate = sample_rate * num_channels * (bitdepth / 8);
-    fwrite(&byte_rate, 4, 1, fp);
-    short block_align = num_channels * (bitdepth / 8);
-    fwrite(&block_align, 2, 1, fp);
-    fwrite(&bitdepth, 2, 1, fp);
-
-    // data
-    fwrite("data", 1, 4, fp);
-    fwrite(&num_samples, 4, 1, fp);
-}
-
-
-
-int main(int argc, char *argv[])
-{
-    // Read 4k from stdin
-    char buf[4096];
+    int max_size = 1000000000;
+    int size = 0;
     while (true)
     {
-        int n = fread(buf, 1, 4096, stdin);
-        if (n <= 0)
+        auto buffer = queue.pop();
+        if (buffer.size() == 0)
         {
-            break;
+            return true;
         }
+
+        char *buf = &buffer[0];
         // convert each byte to unsigned
-        for (int i = 0; i < n; i++)
+        for (unsigned int i = 0; i < buffer.size(); i++)
         {
             buf[i] ^= 0x80;
         }
-        // Write to stdout
-        n = fwrite(buf, 1, n, stdout);
-        if (n <= 0)
+
+        fwrite(buf, 1, buffer.size(), fp);
+
+        size += buffer.size();
+        if(size > max_size)
+        {
+            return false;
+        }
+
+    }
+}
+
+bool ProcessFile(FILE *fp, BufferQueue &queue)
+{
+    int sample_rate = 20000000;
+    WriteWaveFileHeader(fp, sample_rate, 0, 2, 8);
+    bool ret = ProcessQueue(fp, queue);
+    auto size = ftell(fp);
+    // move to beginning
+    fseek(fp, 0, SEEK_SET);
+    WriteWaveFileHeader(fp, sample_rate, size, 2, 8);
+    return ret;
+}
+
+void WorkerThread(BufferQueue &queue)
+{
+    std::cout << "Starting worker thread\n";
+    int file_index = 0;
+    std::string file_prefix = "/tmp/hackrf";
+    std::string file_extension = ".wav";
+
+    while (true)
+    {
+        std::string filename = file_prefix + std::to_string(file_index) + file_extension;
+        std::cout << "Opening file: " << filename << std::endl;
+
+        // Open file
+        FILE *fp = fopen(filename.c_str(), "wb");
+        bool failed = ProcessFile(fp, queue);
+        fclose(fp);
+        if (failed)
         {
             break;
         }
+        file_index++;
     }
+
+    std::cout << "worker thread stopping\n";
+}
+
+int main(int argc, char *argv[])
+{
+    BufferQueue queue;
+    // start workthread in a new thread
+    std::thread workthread(WorkerThread, std::ref(queue));
+
+    // Read 4k from stdin
+    while (true)
+    {
+        std::vector<char> buf(4086);
+        int n = fread(&buf[0], 1, 4096, stdin);
+        if (n <= 0)
+        {
+            buf.resize(0);
+            queue.push(buf);
+            break;
+        }
+        buf.resize(n);
+        queue.push(buf);
+    }
+    std::cout << "main thread stopping\n";
+    workthread.join();
+
     return 0;
 }

@@ -52,7 +52,7 @@ void WorkerThread(BufferQueue &queue)
     std::cout << "Starting worker thread\n";
     int file_index = 0;
     std::string file_prefix = "/mnt/hackrf";
-    std::string file_extension = ".wav";
+    std::string file_extension = "-100000kHz-IQ.wav";
 
     while (true)
     {

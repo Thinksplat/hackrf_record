@@ -36,6 +36,6 @@ public:
         std::condition_variable m_condition;
 };
 
-typedef ThreadsafeQueue<std::vector<char>*> BufferQueue;
+typedef ThreadsafeQueue<std::vector<char>> BufferQueue;
 
 #endif /* D973859B_F679_4191_BD8A_E950B49D2843 */

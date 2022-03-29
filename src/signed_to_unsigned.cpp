@@ -7,14 +7,11 @@
 
 bool ProcessQueue(FILE *fp, BufferQueue &queue)
 {
-    int max_size = 1000000000;
-    int size = 0;
+    unsigned int max_size = 1000000000;
+    unsigned int writesize = 0;
     while (true)
     {
-        // Make sure this gets freed
-        std::unique_ptr<std::vector<char>> bufferobj(queue.pop());
-
-        auto &buffer = *bufferobj;
+        auto buffer = queue.pop();
         if (buffer.size() == 0)
         {
             return true;
@@ -28,10 +25,10 @@ bool ProcessQueue(FILE *fp, BufferQueue &queue)
             buf[i] ^= 0x80;
         }
 
-        fwrite(buf, 1, buffer.size(), fp);
+        fwrite(buf, 1, size, fp);
 
-        size += buffer.size();
-        if (size > max_size)
+        writesize += size;
+        if (writesize > max_size)
         {
             return false;
         }
@@ -88,17 +85,18 @@ int main(int argc, char *argv[])
     // Read 4k from stdin
     while (true)
     {
-        std::vector<char> *bufobj = new std::vector<char>(readsize);
-        std::vector<char> &buf = *bufobj;
+        std::vector<char> buf(readsize);
         int n = fread(buf.data(), 1, readsize, stdin);
         if (n <= 0)
         {
             buf.resize(0);
-            queue.push(bufobj);
+            queue.push(buf);
             break;
         }
-        buf.resize(n);
-        queue.push(bufobj);
+        if((int)buf.size() != n) {
+            buf.resize(n);
+        }
+        queue.push(buf);
     }
     std::cout << "main thread stopping\n";
     workthread.join();

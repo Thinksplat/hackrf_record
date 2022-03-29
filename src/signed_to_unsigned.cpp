@@ -51,7 +51,7 @@ void WorkerThread(BufferQueue &queue)
 {
     std::cout << "Starting worker thread\n";
     int file_index = 0;
-    std::string file_prefix = "/tmp/hackrf";
+    std::string file_prefix = "/mnt/hackrf";
     std::string file_extension = ".wav";
 
     while (true)

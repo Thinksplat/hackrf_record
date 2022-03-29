@@ -38,9 +38,9 @@ def WriteToWav(f,q):
 
         # convert data buffer to array of chars
         #data = bytearray(data)        
-        for i in range(0, len(data)):
-            # convert from signed to unsigned
-            data[i] =  data[i] ^ 0x80;
+        # for i in range(0, len(data)):
+        #     # convert from signed to unsigned
+        #     data[i] =  data[i] ^ 0x80;
         # convert byte array back to buffer
         #data = bytes(data)
 

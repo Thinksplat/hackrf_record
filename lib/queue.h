@@ -1,28 +1,32 @@
 #ifndef D973859B_F679_4191_BD8A_E950B49D2843
 #define D973859B_F679_4191_BD8A_E950B49D2843
 
+// include mutex and queue files
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 
-
-class ThreadsafeQueue<T>
+template <typename T>
+class ThreadsafeQueue
 {
 public:
     ThreadsafeQueue();
     ~ThreadsafeQueue();
 
     void push(T value) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        queue_.push(value);
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_queue.push(value);
         lock.unlock();
-        condition_.notify_one();
+        m_condition.notify_one();
     }
     
     T pop() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        while (queue_.empty()) {
-            condition_.wait(lock);
+        std::unique_lock<std::mutex> lock(m_mutex);
+        while (m_queue.empty()) {
+            m_condition.wait(lock);
         }
-        T value = queue_.front();
-        queue_.pop();
+        T value = m_queue.front();
+        m_queue.pop();
         return value;
     }
     private:

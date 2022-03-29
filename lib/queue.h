@@ -14,7 +14,7 @@ public:
     ThreadsafeQueue() {}
     ~ThreadsafeQueue() {}
 
-    void push(T value) {
+    void push(const T &value) {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_queue.push(value);
         lock.unlock();

@@ -1,31 +1,33 @@
 #ifndef AB1D2D32_1634_4820_B88E_EFB5DC492AF4
 #define AB1D2D32_1634_4820_B88E_EFB5DC492AF4
 
-void WriteWaveFileHeader(FILE *fp, int sample_rate, int num_samples, int num_channels, int bitdepth)
+#include "IDataSink.h"
+
+void WriteWaveFileHeader(IDataWriter &writer, int sample_rate, int num_samples, int num_channels, int bitdepth)
 {
     // RIFF header
-    fwrite("RIFF", 1, 4, fp);
+    writer.PutData("RIFF", 4);
     int file_size = 36 + num_samples * num_channels * (bitdepth / 8);
-    fwrite(&file_size, 4, 1, fp);
-    fwrite("WAVE", 1, 4, fp);
+    writer.PutData(reinterpret_cast<char*>(&file_size), 4);
+    writer.PutData("WAVE", 4);
 
     // fmt 
-    fwrite("fmt ", 1, 4, fp);
+    writer.PutData("fmt ", 4);
     int subchunk1_size = 16;
-    fwrite(&subchunk1_size, 4, 1, fp);
+    writer.PutData(reinterpret_cast<char*>(&subchunk1_size), 4);
     short audio_format = 1;
-    fwrite(&audio_format, 2, 1, fp);
-    fwrite(&num_channels, 2, 1, fp);
-    fwrite(&sample_rate, 4, 1, fp);
+    writer.PutData(reinterpret_cast<char*>(&audio_format), 2);
+    writer.PutData(reinterpret_cast<char*>(&num_channels), 2);
+    writer.PutData(reinterpret_cast<char*>(&sample_rate), 4);
     int byte_rate = sample_rate * num_channels * (bitdepth / 8);
-    fwrite(&byte_rate, 4, 1, fp);
+    writer.PutData(reinterpret_cast<char*>(&byte_rate), 4);
     short block_align = num_channels * (bitdepth / 8);
-    fwrite(&block_align, 2, 1, fp);
-    fwrite(&bitdepth, 2, 1, fp);
+    writer.PutData(reinterpret_cast<char*>(&block_align), 2);
+    writer.PutData(reinterpret_cast<char*>(&bitdepth), 2);
 
     // data
-    fwrite("data", 1, 4, fp);
-    fwrite(&num_samples, 4, 1, fp);
+    writer.PutData("data", 4);
+    writer.PutData(reinterpret_cast<char*>(&num_samples), 4);
 }
 
 

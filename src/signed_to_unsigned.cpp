@@ -1,54 +1,53 @@
-#include <stdio.h>
 #include <iostream>
 #include <thread>
 #include <string>
 #include "lib/queue.h"
 #include "lib/waveheader.h"
+#include "lib/QueueDataSource.h"
+#include "lib/ConvertDataSource.h"
+#include "lib/FileDataSink.h"
 
-bool ProcessQueue(FILE *fp, BufferQueue &queue)
+// Returns true when the read fails.
+bool ProcessQueue(IDataWriter &writer, IDataSource &queue)
 {
-    unsigned int max_size = 1000000000;
+    const unsigned int max_size = 1000000000;
     unsigned int writesize = 0;
     while (true)
     {
-        auto buffer = queue.pop();
+        auto buffer = queue.GetData();
         if (buffer.size() == 0)
         {
             return true;
         }
 
-        char *buf = buffer.data();
-        auto size = buffer.size();
-        // convert each byte to unsigned
-        for (unsigned int i = 0; i < size; i++)
-        {
-            buf[i] ^= 0x80;
-        }
+        writer.PutData(buffer);
 
-        fwrite(buf, 1, size, fp);
-
-        writesize += size;
+        writesize += buffer.size();
         if (writesize > max_size)
         {
             return false;
         }
-
     }
 }
 
-bool ProcessFile(FILE *fp, BufferQueue &queue)
+bool ProcessFile(IDataSink &writer, IDataSource &queue)
 {
-    int sample_rate = 20000000;
-    WriteWaveFileHeader(fp, sample_rate, 0, 2, 8);
-    bool ret = ProcessQueue(fp, queue);
-    auto size = ftell(fp);
-    // move to beginning
-    fseek(fp, 0, SEEK_SET);
-    WriteWaveFileHeader(fp, sample_rate, size, 2, 8);
+    const int sample_rate = 20000000;
+    const int channels = 2;
+    const int bitdepth = 8;
+    WriteWaveFileHeader(writer, sample_rate, 0, channels, bitdepth);
+
+    auto headersize = writer.Size();
+
+    bool ret = ProcessQueue(writer, queue);
+
+    auto filesize = writer.Size();
+    writer.Rewind();
+    WriteWaveFileHeader(writer, sample_rate, filesize - headersize, channels, bitdepth);
     return ret;
 }
 
-void WorkerThread(BufferQueue &queue)
+void WorkerThread(IDataSource &queue)
 {
     std::cout << "Starting worker thread\n";
     int file_index = 0;
@@ -60,10 +59,10 @@ void WorkerThread(BufferQueue &queue)
         std::string filename = file_prefix + std::to_string(file_index) + file_extension;
         std::cout << "Opening file: " << filename << std::endl;
 
-        // Open file
-        FILE *fp = fopen(filename.c_str(), "wb");
-        bool failed = ProcessFile(fp, queue);
-        fclose(fp);
+        FileSink sink(filename.c_str());
+
+        bool failed = ProcessFile(sink, queue);
+
         if (failed)
         {
             break;
@@ -79,8 +78,11 @@ int main(int argc, char *argv[])
     const int readsize = 4096;
 
     BufferQueue queue;
+    QueueDataSource queue_data_source(queue);
+    ConvertDataSource convert_data_source(queue_data_source);
+
     // start workthread in a new thread
-    std::thread workthread(WorkerThread, std::ref(queue));
+    std::thread workthread(WorkerThread, std::ref(convert_data_source));
 
     // Read 4k from stdin
     while (true)
@@ -93,7 +95,8 @@ int main(int argc, char *argv[])
             queue.push(buf);
             break;
         }
-        if((int)buf.size() != n) {
+        if ((int)buf.size() != n)
+        {
             buf.resize(n);
         }
         queue.push(buf);

@@ -15,3 +15,4 @@ bazel.iml
 # based on the name of the directory bazel is cloned into.
 bazel-*
 .venv
+__pycache__

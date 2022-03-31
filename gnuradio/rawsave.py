@@ -134,10 +134,6 @@ def main(top_block_cls=rawsave, options=None):
             print(tb.epy_block_0.done)
         except KeyboardInterrupt:
             sig_handler()
-    try:
-        input('Press Enter to quit: ')
-    except EOFError:
-        pass
 
     print("DONE")
     tb.stop()
